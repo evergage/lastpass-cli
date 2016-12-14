@@ -34,6 +34,7 @@
  * See LICENSE.OpenSSL for more details regarding this exception.
  */
 #include "agent.h"
+#include "cipher.h"
 #include "cmd.h"
 #include "util.h"
 #include "config.h"
@@ -45,20 +46,24 @@
 #include <string.h>
 #include <unistd.h>
 
+void print_public_key_fingerprint(unsigned char *key);
+
 int cmd_status(int argc, char **argv)
 {
 	unsigned char key[KDF_HASH_LEN];
 	static struct option long_options[] = {
 		{"quiet", no_argument, NULL, 'q'},
 		{"color", required_argument, NULL, 'C'},
+		{"public-key-fingerprint", no_argument, NULL, 'k'},
 		{0, 0, 0, 0}
 	};
 	int option;
 	int option_index;
 	bool quiet = false;
+	bool public_key_fingerprint = false;
 	_cleanup_free_ char *username = NULL;
 
-	while ((option = getopt_long(argc, argv, "q", long_options, &option_index)) != -1) {
+	while ((option = getopt_long(argc, argv, "qk", long_options, &option_index)) != -1) {
 		switch (option) {
 			case 'q':
 				quiet = true;
@@ -66,6 +71,9 @@ int cmd_status(int argc, char **argv)
 			case 'C':
 				terminal_set_color_mode(
 					parse_color_mode_string(optarg));
+				break;
+			case 'k':
+				public_key_fingerprint = true;
 				break;
 			case '?':
 			default:
@@ -82,7 +90,34 @@ int cmd_status(int argc, char **argv)
 		if(!quiet) {
 			username = config_read_string("username");
 			terminal_printf(TERMINAL_FG_GREEN TERMINAL_BOLD "Logged in" TERMINAL_RESET " as " TERMINAL_UNDERLINE "%s" TERMINAL_RESET ".\n", username);
+			if (public_key_fingerprint) {
+				print_public_key_fingerprint(key);
+			}
 		}
 		return 0;
 	}
+}
+
+void print_public_key_fingerprint(unsigned char *key)
+{
+	struct session *session = NULL;
+	struct blob *blob = NULL;
+
+	init_all(0, key, &session, NULL);
+
+	if (session->private_key.len == 0) {
+		terminal_printf(TERMINAL_FG_RED TERMINAL_BOLD "Public key not yet generated" TERMINAL_RESET ".\n");
+	} else {
+		_cleanup_free_ char *hex_fingerprint = cipher_public_key_from_private_fingerprint_sha256_hex(
+				&session->private_key);
+		if (!hex_fingerprint) {
+			die("Unable to derive public key fingerprint");
+		}
+		terminal_printf(
+				TERMINAL_FG_GREEN TERMINAL_BOLD "Public key fingerprint" TERMINAL_RESET " is " TERMINAL_UNDERLINE
+						"%s" TERMINAL_RESET ".\n", hex_fingerprint);
+	}
+
+	session_free(session);
+	blob_free(blob);
 }
