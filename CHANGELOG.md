@@ -1,3 +1,7 @@
+# Version 1.0.0-evg.1
+ * Add support for confirming sharing key fingerprints when adding users to
+   shared folders.
+
 # Version 1.0.0
  * New command ```lpass status``` shows whether or not the user is logged
    in with agent, from Nick Knudson
