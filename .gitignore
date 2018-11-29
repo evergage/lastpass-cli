@@ -7,4 +7,7 @@ lpass.exe
 certificate.h
 tags
 build
-Makefile
+test/.lpass
+
+# IDE
+/.idea

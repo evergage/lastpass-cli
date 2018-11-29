@@ -1,7 +1,7 @@
 /*
  * command for generating passwords
  *
- * Copyright (C) 2014-2016 LastPass.
+ * Copyright (C) 2014-2018 LastPass.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -61,7 +61,7 @@ int cmd_generate(int argc, char **argv)
 		{"clip", no_argument, NULL, 'c'},
 		{0, 0, 0, 0}
 	};
-	char option;
+	int option;
 	int option_index;
 	char *username = NULL;
 	char *url = NULL;

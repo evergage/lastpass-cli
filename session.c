@@ -1,7 +1,7 @@
 /*
  * session handling routines
  *
- * Copyright (C) 2014-2016 LastPass.
+ * Copyright (C) 2014-2018 LastPass.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -81,7 +81,7 @@ void session_save(struct session *session, unsigned const char key[KDF_HASH_LEN]
 	if (session->server)
 		config_write_string("session_server", session->server);
 }
-struct session *sesssion_load(unsigned const char key[KDF_HASH_LEN])
+struct session *session_load(unsigned const char key[KDF_HASH_LEN])
 {
 	struct session *session = session_new();
 	session->uid = config_read_encrypted_string("session_uid", key);

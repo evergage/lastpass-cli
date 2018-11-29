@@ -1,7 +1,7 @@
 /*
  * xml parsing routines
  *
- * Copyright (C) 2014-2016 LastPass.
+ * Copyright (C) 2014-2018 LastPass.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -252,7 +252,7 @@ xml_parse_share_user(xmlDoc *doc, xmlNode *item, struct share_user *user)
 			continue;
 		if (xml_parse_bool(doc, child, "group", &user->is_group))
 			continue;
-		if (xml_parse_bool(doc, child, "outsideenterpise", &user->outside_enterprise))
+		if (xml_parse_bool(doc, child, "outsideenterprise", &user->outside_enterprise))
 			continue;
 		if (xml_parse_bool(doc, child, "accepted", &user->accepted))
 			continue;

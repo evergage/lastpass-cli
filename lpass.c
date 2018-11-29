@@ -1,7 +1,7 @@
 /*
  * lpass - lastpass command line utility
  *
- * Copyright (C) 2014-2016 LastPass.
+ * Copyright (C) 2014-2018 LastPass.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -102,6 +102,8 @@ static int global_options(int argc, char *argv[])
 			case 'h':
 				version();
 				printf("\n");
+				help();
+				return 0;
 			case '?':
 				help();
 				return option == 'h';

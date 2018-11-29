@@ -1,7 +1,7 @@
 /*
  * encryption and decryption routines
  *
- * Copyright (C) 2014-2016 LastPass.
+ * Copyright (C) 2014-2018 LastPass.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -301,7 +301,7 @@ char *cipher_base64(const unsigned char *bytes, size_t len)
 	return base64(bytes, len);
 }
 
-static size_t unbase64(const char *bytes, unsigned char **unbase64)
+size_t unbase64(const char *bytes, unsigned char **unbase64)
 {
 	size_t len;
 	BIO *memory, *b64;

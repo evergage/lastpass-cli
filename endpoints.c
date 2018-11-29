@@ -1,7 +1,7 @@
 /*
  * https endpoints for LastPass services
  *
- * Copyright (C) 2014-2016 LastPass.
+ * Copyright (C) 2014-2018 LastPass.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -182,6 +182,7 @@ void lastpass_update_account(enum blobsync sync, unsigned const char key[KDF_HAS
 	http_post_add_params(&params,
 			     "extjs", "1",
 			     "token", session->token,
+			     "method", "cli",
 			     "name", account->name_encrypted,
 			     "grouping", account->group_encrypted,
 			     "pwprotect", account->pwprotect ? "on" : "off",
@@ -205,17 +206,26 @@ void lastpass_update_account(enum blobsync sync, unsigned const char key[KDF_HAS
 			http_post_add_params(&params, "appaid", account->id, NULL);
 
 		upload_queue_enqueue(sync, key, session, "addapp.php", &params);
-
-	} else {
-		http_post_add_params(&params,
-				     "aid", account->id,
-				     "url", url,
-				     "username", account->username_encrypted,
-				     "password", account->password_encrypted,
-				     "extra", account->note_encrypted,
-				     NULL);
-		upload_queue_enqueue(sync, key, session, "show_website.php", &params);
+		goto out_free_params;
 	}
+	http_post_add_params(&params,
+			     "aid", account->id,
+			     "url", url,
+			     "username", account->username_encrypted,
+			     "password", account->password_encrypted,
+			     "extra", account->note_encrypted,
+			     NULL);
+
+	if (strlen(fields)) {
+		http_post_add_params(&params,
+				     "save_all", "1",
+				     "data", fields,
+				     NULL);
+	}
+	upload_queue_enqueue(sync, key, session, "show_website.php", &params);
+
+out_free_params:
+	free(params.argv);
 }
 
 unsigned long long lastpass_get_blob_version(struct session *session, unsigned const char key[KDF_HASH_LEN])
@@ -248,6 +258,8 @@ void lastpass_log_access(enum blobsync sync, const struct session *session, unsi
 		http_post_add_params(&params, "sharedfolderid", account->share->id, NULL);
 
 	upload_queue_enqueue(sync, key, session, "loglogin.php", &params);
+
+	free(params.argv);
 }
 
 
@@ -426,7 +438,7 @@ int lastpass_upload(const struct session *session,
 		    starts_with(params.argv[i], "extra")) {
 			free(params.argv[i]);
 		}
-		if (starts_with(params.argv[i], "url")) {
+		else if (starts_with(params.argv[i], "url")) {
 			free(params.argv[i]);
 			if (i < params.n_alloced) {
 				free(params.argv[i+1]);
@@ -441,4 +453,62 @@ int lastpass_upload(const struct session *session,
 		return -EINVAL;
 
 	return xml_api_err(reply);
+}
+
+/*
+ * Get the attachment for a given attachment id.  The crypttext is returned
+ * and should be decrypted with account->attachkey.  The pointer returned
+ * in *result should be freed by the caller.
+ */
+int lastpass_load_attachment(const struct session *session,
+			     const char *shareid,
+			     struct attach *attach,
+			     char **result)
+{
+	char *reply = NULL;
+	char *p;
+
+	*result = NULL;
+
+	struct http_param_set params = {
+		.argv = NULL,
+		.n_alloced = 0
+	};
+
+	http_post_add_params(&params,
+			     "token", session->token,
+			     "getattach", attach->storagekey,
+			     NULL);
+
+	if (shareid) {
+		http_post_add_params(&params,
+				     "sharedfolderid", shareid,
+				     NULL);
+	}
+
+	reply = http_post_lastpass_param_set("getattach.php",
+					     session, NULL,
+					     &params);
+
+	free(params.argv);
+	if (!reply)
+		return -ENOENT;
+
+	/* returned string is json-encoded base64 string; unescape it */
+	if (reply[0] == '"')
+		memmove(reply, reply+1, strlen(reply));
+	if (reply[strlen(reply)-1] == '"')
+		reply[strlen(reply)-1] = 0;
+
+	p = reply;
+	while (*p) {
+		if (*p == '\\') {
+			memmove(p, p + 1, strlen(p));
+		} else {
+			p++;
+		}
+	}
+
+	*result = reply;
+	return 0;
 }

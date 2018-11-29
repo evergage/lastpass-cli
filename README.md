@@ -1,5 +1,5 @@
 # LastPass CLI
-#### (c) 2014-2016 LastPass.
+#### (c) 2014-2018 LastPass.
 
 Command line interface to [LastPass.com](https://lastpass.com/).
 
@@ -18,7 +18,16 @@ Command line interface to [LastPass.com](https://lastpass.com/).
 
 ### Installing on Linux
 #### Arch
-* Binary packages are available in the [Arch User Repository (AUR)](https://aur.archlinux.org/packages.php?O=0&L=0&C=0&K=lastpass-cli). Information about installing packages from the AUR [can be found on the Arch wiki](https://wiki.archlinux.org/index.php/Arch_User_Repository#Installing_packages).
+* A binary package is available from the community repository, use pacman to simple install lastpass-cli.
+* Can be build from source with the "lastpass-cli-git" *[Arch User Repository (AUR)](https://aur.archlinux.org/packages.php?O=0&L=0&C=0&K=lastpass-cli). 
+Information about installing packages from the AUR [can be found on the Arch wiki](https://wiki.archlinux.org/index.php/Arch_User_Repository#Installing_packages).
+
+```
+# from community repository
+sudo pacman -S lastpass-cli
+# from AUR repository
+packer -S lastpass-cli-git
+```
 
 #### Fedora
 
@@ -28,7 +37,7 @@ Command line interface to [LastPass.com](https://lastpass.com/).
 sudo dnf install lastpass-cli
 ```
 
-#### Redhat/Centos
+#### Red Hat/Centos
 
 * Packages are available in [EPEL](https://fedoraproject.org/wiki/EPEL) for RHEL/CentOS 7 and later.
 
@@ -40,24 +49,49 @@ sudo yum install lastpass-cli
   the 'Building' section.
 
 ```
-sudo yum install openssl libcurl libxml2 pinentry xclip openssl-devel libxml2-devel libcurl-devel
+sudo yum install openssl libcurl libxml2 pinentry xclip openssl-devel libxml2-devel libcurl-devel gcc gcc-c++ make cmake
 ```
 
 
 #### Debian/Ubuntu
+
 * Install the needed build dependencies, and then follow instructions in
   the 'Building' section.
 
-* For Debian:
+* For Debian (stable/oldstable) and Ubuntu < 18.04
 
 ```
-sudo apt-get install openssl libcurl3 libxml2 libssl-dev libxml2-dev libcurl4-openssl-dev pinentry-curses xclip
+apt-get --no-install-recommends -yqq install \
+  bash-completion \
+  build-essential \
+  cmake \
+  libcurl3  \
+  libcurl3-openssl-dev  \
+  libssl1.0 \
+  libssl1.0-dev \
+  libxml2 \
+  libxml2-dev  \
+  pkg-config \
+  ca-certificates \
+  xclip
 ```
 
-* For Ubuntu:
+* For Debian (testing/experimental) and Ubuntu >= 18.04
 
 ```
-sudo apt-get install openssl libcurl4-openssl-dev libxml2 libssl-dev libxml2-dev pinentry-curses xclip
+apt-get --no-install-recommends -yqq install \
+  bash-completion \
+  build-essential \
+  cmake \
+  libcurl4  \
+  libcurl4-openssl-dev  \
+  libssl-dev  \
+  libxml2 \
+  libxml2-dev  \
+  libssl1.1 \
+  pkg-config \
+  ca-certificates \
+  xclip
 ```
 
 #### Gentoo
@@ -85,12 +119,6 @@ brew update
 
 ```
 brew install lastpass-cli --with-pinentry
-```
-
-Alternatively, if you want to install the documentation as well:
-
-```
-brew install lastpass-cli --with-pinentry --with-doc
 ```
 
 #### With [MacPorts](https://www.macports.org/)
@@ -136,12 +164,15 @@ sudo make -C /usr/ports/security/lastpass-cli all install clean
   instructions in the 'Building' section.
 
 ```
-apt-cyg install wget make gcc-core openssl-devel libcurl-devel libxml2-devel libiconv-devel cygutils-extra
+apt-cyg install wget make cmake gcc-core gcc-g++ openssl-devel libcurl-devel libxml2-devel libiconv-devel cygutils-extra
 ```
 
 ## Building
 
-    $ cmake . && make
+    $ make
+
+Under the covers, make invokes cmake in a build directory; you may also use
+cmake directly if you need more control over the build process.
 
 ## Installing
 
@@ -161,11 +192,16 @@ Otherwise, from the build directory:
 
 ## Documentation
 
+Install `asciidoc` and `xsltproc` if they are not already installed.
+
+    $ sudo apt-get install asciidoc xsltproc
+
 The `install-doc` target builds and installs the documentation.
-It requires AsciiDoc as a prerequisite.
 
     $ sudo make install-doc
 
 Once installed,
 
     $ man lpass
+    
+You can view the full documentation in the manpage, `man lpass` or [view it online](https://lastpass.github.io/lastpass-cli/lpass.1.html).

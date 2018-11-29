@@ -81,7 +81,7 @@ int cmd_passwd(int argc, char **argv);
 #define cmd_passwd_usage "passwd"
 
 int cmd_show(int argc, char **argv);
-#define cmd_show_usage "show [--sync=auto|now|no] [--clip, -c] [--expand-multi, -x] [--all|--username|--password|--url|--notes|--field=FIELD|--id|--name] [--basic-regexp, -G|--fixed-strings, -F] " color_usage " {UNIQUENAME|UNIQUEID}"
+#define cmd_show_usage "show [--sync=auto|now|no] [--clip, -c] [--quiet, -q] [--expand-multi, -x] [--json, -j] [--all|--username|--password|--url|--notes|--field=FIELD|--id|--name|--attach=ATTACHID] [--basic-regexp, -G|--fixed-strings, -F] " color_usage " {UNIQUENAME|UNIQUEID}"
 
 int cmd_ls(int argc, char **argv);
 #define cmd_ls_usage "ls [--sync=auto|now|no] [--long, -l] [-m] [-u] " color_usage " [GROUP]"
@@ -108,7 +108,7 @@ int cmd_sync(int argc, char **argv);
 #define cmd_sync_usage "sync [--background, -b] " color_usage
 
 int cmd_export(int argc, char **argv);
-#define cmd_export_usage "export [--sync=auto|now|no] " color_usage
+#define cmd_export_usage "export [--sync=auto|now|no] " color_usage " [--fields=FIELDLIST]"
 
 int cmd_share(int argc, char **argv);
 #define cmd_share_usage "share subcommand sharename ..."
@@ -118,4 +118,4 @@ int cmd_mv(int argc, char **argv);
 #define cmd_mv_usage "mv " color_usage " {UNIQUENAME|UNIQUEID} GROUP"
 
 int cmd_import(int argc, char **argv);
-#define cmd_import_usage "import [CSV_FILENAME]"
+#define cmd_import_usage "import [--keep-dupes] [CSV_FILENAME]"
