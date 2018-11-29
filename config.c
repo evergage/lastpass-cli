@@ -1,7 +1,7 @@
 /*
  * configuration file handling
  *
- * Copyright (C) 2014-2016 LastPass.
+ * Copyright (C) 2014-2018 LastPass.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -175,7 +175,7 @@ enum config_type config_path_type(const char *name)
 	}
 
 	/* lock files are runtime */
-	if (strlen(name) >= 5 && !strcmp(name-5, ".lock")) {
+	if (strlen(name) >= 5 && !strcmp(name + strlen(name) - 5, ".lock")) {
 		return CONFIG_RUNTIME;
 	}
 

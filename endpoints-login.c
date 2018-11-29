@@ -1,7 +1,7 @@
 /*
  * https endpoints for logging into LastPass
  *
- * Copyright (C) 2014-2016 LastPass.
+ * Copyright (C) 2014-2018 LastPass.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -342,15 +342,16 @@ struct session *lastpass_login(const char *username, const char hash[KDF_HEX_LEN
 		append_post(args, "trustlabel", trusted_label);
 	}
 
-	if (!strcmp(cause, "outofbandrequired") && oob_login(login_server, key, args, error_message, &reply, &otp_name, &session)) {
+	if (cause && !strcmp(cause, "outofbandrequired") &&
+	    oob_login(login_server, key, args, error_message, &reply, &otp_name, &session)) {
 		if (trust)
-			http_post_lastpass("trust.php", session, NULL, "uuid", trusted_id, "trustlabel", trusted_label, NULL);
+			http_post_lastpass("trust.php", session, NULL, "token", session->token, "uuid", trusted_id, "trustlabel", trusted_label, NULL);
 		return session;
 	}
 
 	if (otp_login(login_server, key, args, error_message, &reply, otp_name, cause, user_lower, &session))
 		return session;
 
-	error_other(error_message, &session, "An unspecified error occured.");
+	error_other(error_message, &session, "An unspecified error occurred.");
 	return NULL;
 }

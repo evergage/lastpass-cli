@@ -1,6 +1,94 @@
-# Version 1.0.0-evg.1
+# Version 1.3.2-evg.1
  * Add support for confirming sharing key fingerprints when adding users to
    shared folders.
+
+# Version 1.3.1
+ * Revert "pins: remove GlobalSign R1/R3 pins" from Robert Copeland
+ * Readme update from Wesley Schwengle
+ * Add Dockerfile to create a clean build environment from Wesley Schwengle
+ * Missing dependencies in readme
+ * Added CLion project files to ignore list
+
+# Version 1.3.0
+ * `lpass show` now supports `--json` format
+ * `lpass show` now supports `--quiet` flag to suppress prompts,
+   from Pau Sanchez
+ * `lpass import` has `--keep-dupes` flag which will preserve duplicate
+   accounts on import
+ * `LPASS_PINENTRY` environment variable may now be used to set custom
+   path to pinentry, from Martynas Mickevičius
+ * Build fix for aarch64 and others from Natanael Copa
+ * New fish completions from Israel Chauca Fuentes
+ * Zsh completions from Richard Hillmann
+ * Brew build instructions updates from Roger D. Winans
+ * bugfix: site notes now show up in notes textarea instead of fields
+ * spelling fixes from Josh Soref
+
+# Version 1.2.2
+ * `lpass ls --format` now supports "%al" to show URL, from Yikai Zhao
+ * $VISUAL can be used in preference to $EDITOR, from Wesley Schwengle
+ * `lpass edit` can now directly edit multiline ssh keys
+ * fields are now preserved when edited with `lpass edit`
+ * Bugfix: use-after-free in http.c fixed, from Björn Ketelaars
+ * Bugfix: command-line completion now works for names with spaces
+ * Bugfix: loading attachments from shared folders now works, from Spencer
+   Whyte
+ * Debian packing updates from Hannes Hörl
+ * Documentation updates from Darragh Grealish and Steven Liekens
+
+# Version 1.2.1
+ * Bugfix: fix regression with ```lpass show``` not displaying all fields
+   for secure notes
+ * Use sysctl instead of procfs for pid-to-cmd on some versions of BSD,
+   from Thomas Hurst
+ * Build: fix build for test binaries on OpenBSD, from Björn Ketelaars
+
+# Version 1.2.0
+ * ```lpass show``` now supports new-style multiline ssh keys
+ * ```lpass export``` now supports --fields=FIELDLIST argument to
+   control output, with patches from Kyle Burton
+ * ```lpass ls``` now always shows empty shared folders
+ * ```lpass edit``` can now set the 'master password reprompt' field in sites
+ * ```lpass share create``` now shows the created share name
+ * Bugfix: crash in `lpass show` fixed by Kyle Burton
+ * build fixes for termux and documentation updates, from Christian Rondeau
+ * documentation updates for Ubuntu from Craig Menning and Glenn Oppegard
+ * Test suite now included covering basic operations
+
+# Version 1.1.2
+ * Bugfix: crash with ```lpass logout --color=never``` fixed
+ * Bugfix: ```lpass add``` with secure notes works again
+ * Bugfix: sort order in ```lpass ls``` is now consistent whether or not
+   colors are used
+ * Documentation has been enhanced to describe aliases and more options,
+   with patches by Eric B. Hymowitz.
+ * Build: debian package fixed for rebuild issues and missing build
+   dependencies
+
+# Version 1.1.1
+ * Bugfix: fix crash in ```lpass show``` for secure notes without attachments
+ * Build: fix build on OpenBSD
+ * Build: fix build when using LibreSSL
+
+# Version 1.1.0
+ * New command ```lpass import``` can import an existing csv file (or output
+   from ```lpass export``` into the vault
+ * ```lpass show``` and ```lpass ls``` learned a ```--format``` argument
+   to enable user-specified printf-style formats
+ * Bash completions will now complete field names if ```--field``` is
+   specified after the account name
+ * Build: cmake now used for building, by Filippo Cucchetto and
+   with fixes by Eli Schwartz
+ * Build: lpass has been updated to work with OpenSSL 1.1; please note
+   that libcurl-openssl must also be linked against the same version
+   in order to avoid mysterious segfaults
+ * Bugfix: crash in ```lpass ls -l``` with no last_modified_gmt fixed
+ * Bugfix: secure notes editing with "Name" fields now works properly
+ * Bugfix: editing secure note names now works (github #106)
+ * Bugfix: lpass-created server secure notes are now compatible with the plugin
+ * Bugfix: ```generate``` now uses all defined characters, by Ignat Korchagin
+ * Bugfix: ```lpass show``` for ssh-key secure notes no longer corrupts
+   password-protected ssh keys (github #232)
 
 # Version 1.0.0
  * New command ```lpass status``` shows whether or not the user is logged

@@ -1,7 +1,7 @@
 /*
  * printf-like formatting routines
  *
- * Copyright (C) 2014-2016 LastPass.
+ * Copyright (C) 2014-2018 LastPass.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -82,7 +82,7 @@ char *format_timestamp(char *timestamp, bool utc)
 static
 void append_str(struct buffer *buf, char *str, bool add_slash)
 {
-	if (!strlen(str))
+	if (!str || !strlen(str))
 		return;
 
 	buffer_append_str(buf, str);
@@ -137,6 +137,10 @@ void format_account_item(struct buffer *buf, char fmt,
 	case 'g':
 		/* group name */
 		append_str(buf, account->group, add_slash);
+		break;
+	case 'l':
+		/* URL */
+		append_str(buf, account->url, add_slash);
 		break;
 	default:
 		break;

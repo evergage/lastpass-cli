@@ -1,7 +1,7 @@
 /*
  * http posting routines
  *
- * Copyright (C) 2014-2016 LastPass.
+ * Copyright (C) 2014-2018 LastPass.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -52,6 +52,7 @@ struct mem_chunk {
 	size_t len;
 };
 
+#ifndef TEST_BUILD
 static bool interrupted = false;
 static sig_t previous_handler = SIG_DFL;
 static void interruption_detected(int signal)
@@ -166,6 +167,7 @@ static CURLcode pin_keys(CURL *curl, void *sslctx, void *parm)
 			   verify_callback);
 	return CURLE_OK;
 }
+#endif
 
 static
 void vhttp_post_add_params(struct http_param_set *param_set, va_list args)
@@ -226,6 +228,7 @@ char *http_post_lastpass(const char *page, const struct session *session, size_t
 	return result;
 }
 
+#ifndef TEST_BUILD
 char *http_post_lastpass_v_noexit(const char *server, const char *page, const struct session *session, size_t *final_len, char **argv, int *curl_ret, long *http_code)
 {
 	_cleanup_free_ char *url = NULL;
@@ -307,8 +310,8 @@ char *http_post_lastpass_v_noexit(const char *server, const char *page, const st
 	ret = curl_easy_perform(curl);
 	unset_interrupt_detect();
 
-	curl_easy_cleanup(curl);
 	curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, http_code);
+	curl_easy_cleanup(curl);
 	*curl_ret = ret;
 
 	if (ret != CURLE_OK) {
@@ -322,6 +325,7 @@ char *http_post_lastpass_v_noexit(const char *server, const char *page, const st
 
 	return result.ptr;
 }
+#endif
 
 char *http_post_lastpass_v(const char *server, const char *page, const struct session *session, size_t *final_len, char **argv)
 {

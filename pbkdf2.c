@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2014-2016 Thomas Hurst.
- * Copyright (c) 2016 LastPass.
+ * Copyright (c) 2016-2018 LastPass.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -53,7 +53,7 @@ int fallback_pkcs5_pbkdf2_hmac(const char *pass, size_t pass_len,
 
 	unsigned char tmp_md[md_len];
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
 	HMAC_CTX real_ctx;
 	ctx = &real_ctx;
 	HMAC_CTX_init(ctx);
@@ -97,7 +97,7 @@ int fallback_pkcs5_pbkdf2_hmac(const char *pass, size_t pass_len,
 	ret = 1;
 
 ERR_LABEL
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
 	HMAC_CTX_cleanup(ctx);
 #else
 	HMAC_CTX_free(ctx);

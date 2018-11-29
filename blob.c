@@ -1,7 +1,7 @@
 /*
  * encrypted vault parsing
  *
- * Copyright (C) 2014-2016 LastPass.
+ * Copyright (C) 2014-2018 LastPass.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -107,6 +107,8 @@ void account_free_contents(struct account *account)
 	free(account->username_encrypted);
 	free(account->password_encrypted);
 	free(account->note_encrypted);
+	free(account->attachkey);
+	free(account->attachkey_encrypted);
 
 	list_for_each_entry_safe(field, tmp, &account->field_head, list) {
 		field_free(field);
@@ -147,6 +149,7 @@ struct app *new_app()
 	app->extra_encrypted = xstrdup("");
 
 	INIT_LIST_HEAD(&account->field_head);
+	INIT_LIST_HEAD(&account->attach_head);
 	account->is_app = true;
 
 	return app;
@@ -156,6 +159,7 @@ struct account *new_account()
 {
 	struct account *account = new0(struct account, 1);
 	INIT_LIST_HEAD(&account->field_head);
+	INIT_LIST_HEAD(&account->attach_head);
 	return account;
 }
 
@@ -379,8 +383,8 @@ static struct account *account_parse(struct chunk *chunk, const unsigned char ke
 	skip(action);
 	skip(groupid);
 	skip(deleted);
-	skip(attachkey);
-	skip(attachpresent);
+	entry_plain(attachkey_encrypted);
+	entry_boolean(attachpresent);
 	skip(individualshare);
 	skip(notetype);
 	skip(noalert);
@@ -394,6 +398,13 @@ static struct account *account_parse(struct chunk *chunk, const unsigned char ke
 		parsed->name[0] = '\0';
 	if (parsed->group[0] == 16)
 		parsed->group[0] = '\0';
+
+	if (strlen(parsed->attachkey_encrypted)) {
+		parsed->attachkey = cipher_aes_decrypt_base64(
+			parsed->attachkey_encrypted, key);
+	}
+	if (!parsed->attachkey)
+		parsed->attachkey = xstrdup("");
 
 	/* use name as 'fullname' only if there's no assigned group */
 	if (strlen(parsed->group) &&
@@ -531,6 +542,38 @@ error:
 	return NULL;
 }
 
+static void attach_free(struct attach *attach)
+{
+	if (!attach)
+		return;
+
+	free(attach->id);
+	free(attach->parent);
+	free(attach->mimetype);
+	free(attach->storagekey);
+	free(attach->size);
+	free(attach->filename);
+	free(attach);
+}
+
+static struct attach *attach_parse(struct chunk *chunk)
+{
+	struct attach *parsed = new0(struct attach, 1);
+
+	entry_plain(id);
+	entry_plain(parent);
+	entry_plain(mimetype);
+	entry_plain(storagekey);
+	entry_plain(size);
+	entry_plain(filename);
+
+	return parsed;
+
+error:
+	attach_free(parsed);
+	return NULL;
+}
+
 #undef entry_plain
 #undef entry_plain_at
 #undef entry_hex
@@ -547,6 +590,7 @@ struct blob *blob_parse(const unsigned char *blob, size_t len, const unsigned ch
 	struct field *field;
 	struct share *share, *last_share = NULL;
 	struct app *app = NULL;
+	struct attach *attach;
 	struct blob *parsed;
 	_cleanup_free_ char *versionstr = NULL;
 
@@ -601,6 +645,24 @@ struct blob *blob_parse(const unsigned char *blob, size_t len, const unsigned ch
 			if (!field)
 				goto error;
 			list_add_tail(&field->list, &app->account.field_head);
+		} else if (!strcmp(chunk.name, "ATTA")) {
+			struct account *tmp;
+			bool found = false;
+
+			attach = attach_parse(&chunk);
+			if (!attach)
+				goto error;
+
+			/* add attachment to the proper account's list */
+			list_for_each_entry(tmp, &parsed->account_head, list) {
+				if (!strcmp(tmp->id, attach->parent)) {
+					found = true;
+					list_add_tail(&attach->list, &tmp->attach_head);
+					break;
+				}
+			}
+			if (!found)
+				attach_free(attach);
 		}
 	}
 
@@ -611,6 +673,13 @@ struct blob *blob_parse(const unsigned char *blob, size_t len, const unsigned ch
 error:
 	blob_free(parsed);
 	return NULL;
+}
+
+void buffer_init(struct buffer *buf)
+{
+	buf->len = 0;
+	buf->max = 80;
+	buf->bytes = xcalloc(buf->max, 1);
 }
 
 void buffer_append(struct buffer *buffer, void *bytes, size_t len)
@@ -1067,8 +1136,9 @@ reencrypt:
 struct account *notes_expand(struct account *acc)
 {
 	struct account *expand;
-	struct field *field;
+	struct field *field = NULL;
 	char *start, *lf, *colon, *name, *value;
+	struct attach *attach, *tmp;
 	char *line = NULL;
 	size_t len;
 
@@ -1087,19 +1157,49 @@ struct account *notes_expand(struct account *acc)
 	if (strncmp(acc->note, "NoteType:", 9))
 		return NULL;
 
+	enum note_type note_type = NOTE_TYPE_NONE;
+	lf = strchr(acc->note + 9, '\n');
+	if (lf) {
+		_cleanup_free_ char *type = xstrndup(acc->note + 9, lf - (acc->note + 9));
+		note_type = notes_get_type_by_name(type);
+	}
+
 	for (start = acc->note; ; ) {
+		name = value = NULL;
 		lf = strchrnul(start, '\n');
-		if (lf - start < 0)
-			lf = NULL;
-		if (lf - start <= 0)
+		if (lf == start && !field)
 			goto skip;
+
 		line = xstrndup(start, lf - start);
 		colon = strchr(line, ':');
-		if (!colon)
+		if (colon) {
+			name = xstrndup(line, colon - line);
+			value = xstrdup(colon + 1);
+		}
+
+		/*
+		 * Append non-keyed strings to existing field.
+		 * If no field, skip.
+		 */
+		if (!name) {
+			if (field)
+				xstrappendf(&field->value, "\n%s", line);
 			goto skip;
-		*colon = '\0';
-		name = line;
-		value = colon + 1;
+		}
+
+		/*
+		 * If this is a known notetype, append any non-existent
+		 * keys to the existing field.  For example, Proc-Type
+		 * in the ssh private key field goes into private key,
+		 * not a Proc-Type field.
+		 */
+		if (note_type != NOTE_TYPE_NONE &&
+		    !note_has_field(note_type, name) && field &&
+		    note_field_is_multiline(note_type, field->name)) {
+			xstrappendf(&field->value, "\n%s", line);
+			goto skip;
+		}
+
 		if (!strcmp(name, "Username"))
 			expand->username = xstrdup(value);
 		else if (!strcmp(name, "Password"))
@@ -1120,6 +1220,8 @@ struct account *notes_expand(struct account *acc)
 			list_add(&field->list, &expand->field_head);
 		}
 skip:
+		free(value);
+		free(name);
 		free(line);
 		line = NULL;
 		if (!lf || !*lf)
@@ -1139,12 +1241,23 @@ skip:
 	if (!expand->password)
 		expand->password = xstrdup("");
 
+	/* move attachments to expanded account */
+	expand->attachkey = xstrdup(acc->attachkey);
+	expand->attachkey_encrypted = xstrdup(acc->attachkey_encrypted);
+	expand->attachpresent = acc->attachpresent;
+
+	list_for_each_entry_safe(attach, tmp, &acc->attach_head, list) {
+		list_del(&attach->list);
+		list_add_tail(&attach->list, &expand->attach_head);
+	}
+
 	return expand;
 }
 struct account *notes_collapse(struct account *acc)
 {
 	struct account *collapse;
 	struct field *field;
+	struct attach *attach, *tmp;
 
 	collapse = new_account();
 
@@ -1158,6 +1271,16 @@ struct account *notes_collapse(struct account *acc)
 	collapse->password = xstrdup("");
 	collapse->note = xstrdup("");
 	collapse->share = acc->share;
+
+	/* move attachments back from expanded account */
+	collapse->attachkey = xstrdup(acc->attachkey);
+	collapse->attachkey_encrypted = xstrdup(acc->attachkey_encrypted);
+	collapse->attachpresent = acc->attachpresent;
+
+	list_for_each_entry_safe(attach, tmp, &acc->attach_head, list) {
+		list_del(&attach->list);
+		list_add_tail(&attach->list, &collapse->attach_head);
+	}
 
 	list_for_each_entry(field, &acc->field_head, list) {
 		trim(field->value);

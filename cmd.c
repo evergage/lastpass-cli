@@ -1,7 +1,7 @@
 /*
  * general utility functions used by multiple commands
  *
- * Copyright (C) 2014-2016 LastPass.
+ * Copyright (C) 2014-2018 LastPass.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -94,7 +94,7 @@ void init_all(enum blobsync sync, unsigned char key[KDF_HASH_LEN], struct sessio
 	if (!agent_get_decryption_key(key))
 		die("Could not find decryption key. Perhaps you need to login with `%s login`.", ARGV[0]);
 
-	*session = sesssion_load(key);
+	*session = session_load(key);
 	if (!*session)
 		die("Could not find session. Perhaps you need to login with `%s login`.", ARGV[0]);
 

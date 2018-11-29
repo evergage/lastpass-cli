@@ -1,7 +1,7 @@
 /*
  * queue for changes uploaded to LastPass
  *
- * Copyright (C) 2014-2016 LastPass.
+ * Copyright (C) 2014-2018 LastPass.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -228,6 +228,8 @@ char *password_prompt(const char *prompt, const char *error, const char *descfmt
 	_cleanup_free_ char *password = NULL;
 	char *password_fallback;
 	char *askpass;
+	char *pinentry_fallback = "pinentry";
+	char *pinentry;
 	char *ret;
 	va_list params;
 	int devnull;
@@ -248,6 +250,11 @@ char *password_prompt(const char *prompt, const char *error, const char *descfmt
 		return password_fallback;
 	}
 
+	pinentry = getenv("LPASS_PINENTRY");
+	if (!pinentry) {
+		pinentry = pinentry_fallback;
+	}
+
 	if (pipe(write_fds) < 0 || pipe(read_fds) < 0)
 		die_errno("pipe");
 
@@ -266,7 +273,7 @@ char *password_prompt(const char *prompt, const char *error, const char *descfmt
 		close(read_fds[1]);
 		close(write_fds[0]);
 		close(write_fds[1]);
-		execlp("pinentry", "pinentry", NULL);
+		execlp(pinentry, pinentry, NULL);
 		_exit(76);
 	}
 	close(read_fds[1]);

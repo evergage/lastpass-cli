@@ -1,7 +1,7 @@
 /*
  * command for listing the vault
  *
- * Copyright (C) 2014-2016 LastPass.
+ * Copyright (C) 2014-2018 LastPass.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -194,7 +194,7 @@ static void print_node(struct node *head, char *fmt_str, int level)
 			if (node->account) {
 				struct buffer buf;
 
-				memset(&buf, 0, sizeof(buf));
+				buffer_init(&buf);
 				format_account(&buf, fmt_str, node->account);
 				terminal_printf("%s\n", buf.bytes);
 				free(buf.bytes);
@@ -212,7 +212,10 @@ static int compare_account(const void *a, const void *b)
 {
 	struct account * const *acct_a = a;
 	struct account * const *acct_b = b;
-	return strcmp((*acct_a)->fullname, (*acct_b)->fullname);
+	_cleanup_free_ char *str1 = get_display_fullname(*acct_a);
+	_cleanup_free_ char *str2 = get_display_fullname(*acct_b);
+
+	return strcmp(str1, str2);
 }
 
 int cmd_ls(int argc, char **argv)
@@ -241,6 +244,8 @@ int cmd_ls(int argc, char **argv)
 	_cleanup_free_ struct account **account_array = NULL;
 	int i, num_accounts;
 	_cleanup_free_ char *fmt_str = NULL;
+
+	struct share *share;
 
 	while ((option = getopt_long(argc, argv, "lmu", long_options, &option_index)) != -1) {
 		switch (option) {
@@ -295,9 +300,26 @@ int cmd_ls(int argc, char **argv)
 	list_for_each_entry(account, &blob->account_head, list) {
 		num_accounts++;
 	}
+	list_for_each_entry(share, &blob->share_head, list) {
+		num_accounts++;
+	}
+
 	i=0;
 	account_array = xcalloc(num_accounts, sizeof(struct account *));
 	list_for_each_entry(account, &blob->account_head, list) {
+		account_array[i++] = account;
+	}
+	/* fake accounts for shares, so that empty shared folders are shown. */
+	list_for_each_entry(share, &blob->share_head, list) {
+		struct account *account = new_account();
+		char *tmpname = NULL;
+
+		xasprintf(&tmpname, "%s/", share->name);
+		account->share = share;
+		account->id = share->id;
+		account_set_name(account, xstrdup(""), key);
+		account_set_fullname(account, tmpname, key);
+		account_set_url(account, "http://group", key);
 		account_array[i++] = account;
 	}
 	qsort(account_array, num_accounts, sizeof(struct account *),
@@ -326,7 +348,9 @@ int cmd_ls(int argc, char **argv)
 				continue;
 			group_len = strlen(group);
 			sub += group_len;
-			if (group[group_len - 1] != '/' && sub[0] != '\0' && sub[0] != '/')
+			if (group_len &&
+			    group[group_len - 1] != '/' &&
+			    sub[0] != '\0' && sub[0] != '/')
 				continue;
 		}
 
@@ -337,7 +361,7 @@ int cmd_ls(int argc, char **argv)
 		else {
 			struct buffer buf;
 
-			memset(&buf, 0, sizeof(buf));
+			buffer_init(&buf);
 			format_account(&buf, fmt_str, account);
 			terminal_printf("%s\n", buf.bytes);
 			free(buf.bytes);
