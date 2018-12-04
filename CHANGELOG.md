@@ -1,4 +1,4 @@
-# Version 1.3.2-evg.1
+# Version 1.3.2-evg.2
  * Add support for confirming sharing key fingerprints when adding users to
    shared folders.
 
