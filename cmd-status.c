@@ -81,6 +81,13 @@ int cmd_status(int argc, char **argv)
 		}
 	}
 
+	char *always_confirm_keys_str = getenv("LPASS_ALWAYS_CONFIRM_KEYS");
+	if (always_confirm_keys_str && !strcmp(always_confirm_keys_str, "1")) {
+		// Always print the public key fingerprint if the we are required
+		// to always confirm keys on share adds.
+		public_key_fingerprint = true;
+	}
+
 	if (!agent_ask(key)) {
 		if(!quiet) {
 			terminal_printf(TERMINAL_FG_RED TERMINAL_BOLD "Not logged in" TERMINAL_RESET ".\n");

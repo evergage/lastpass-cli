@@ -514,6 +514,12 @@ int cmd_share(int argc, char **argv)
 		}
 	}
 
+	char *always_confirm_keys_str = getenv("LPASS_ALWAYS_CONFIRM_KEYS");
+	if (always_confirm_keys_str && !strcmp(always_confirm_keys_str, "1")) {
+		// Make sure we do not allow share adds without confirming the key fingerprint.
+		args.confirm_keys = true;
+	}
+
 	if (argc - optind < 1)
 		share_help();
 

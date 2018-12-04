@@ -235,6 +235,8 @@ The '-k' flag will print the public key fingerprint of the sharee and
 will require manual confirmation to actually share the folder. Confirm that the
 displayed fingerprint is the one that was shown during 'status -k' for the sharee.
 
+Set environment variable `LPASS_ALWAYS_CONFIRM_KEYS` to 1 to force key confirmation.
+
 Clipboard
 ~~~~~~~~~
 Commands that take a '-c' or '--clip' option will copy the output to the
@@ -303,6 +305,7 @@ in the section above:
 * 'LPASS_DISABLE_PINENTRY'
 * 'LPASS_ASKPASS'
 * 'LPASS_CLIPBOARD_COMMAND'
+* 'LPASS_LPASS_ALWAYS_CONFIRM_KEYS'
 
 EXAMPLES
 --------
